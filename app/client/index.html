@@ -4,225 +4,529 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Phishing URL Classifier</title>
+  <title>Phish-Catcher</title>
   <style>
     :root {
-      --bg: #0f1420;
-      --panel: #161d2e;
-      --border: #263049;
-      --text: #e7ecf7;
-      --muted: #93a0bb;
-      --accent: #5b8cff;
-      --low: #35c774;
-      --medium: #f2b73b;
-      --high: #ff5a5f;
+      --bg: #0d1117;
+      --panel: #11161d;
+      --panel-2: #161c25;
+      --border: #262c36;
+      --border-soft: #1c222c;
+      --text: #e6e9ef;
+      --muted: #8a93a3;
+      --muted-2: #566072;
+      --accent: #4c8dff;
+      --low: #3fb965;
+      --medium: #d6a53c;
+      --high: #e0525f;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
 
     * {
       box-sizing: border-box;
     }
 
+    html,
+    body {
+      height: 100%;
+    }
+
     body {
       margin: 0;
       background: var(--bg);
       color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: var(--sans);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .topbar {
+      border-bottom: 1px solid var(--border-soft);
+      background: var(--panel);
+    }
+
+    .topbar-inner {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 15px 20px;
       display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .mark {
+      width: 22px;
+      height: 22px;
+      border-radius: 5px;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
       justify-content: center;
-      padding: 40px 16px;
+      flex-shrink: 0;
+    }
+
+    .mark svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    .topbar-title {
+      font-size: 13.5px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    .topbar-status {
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--mono);
+    }
+
+    .topbar-status .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--low);
     }
 
     .wrap {
-      width: 100%;
-      max-width: 720px;
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 44px 20px 56px;
+    }
+
+    .heading-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 20px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
     }
 
     h1 {
-      font-size: 22px;
-      margin: 0 0 4px;
+      font-size: 21px;
+      font-weight: 650;
+      margin: 0 0 6px;
+      letter-spacing: -0.01em;
     }
 
     p.sub {
       color: var(--muted);
-      margin: 0 0 28px;
-      font-size: 14px;
+      margin: 0;
+      font-size: 13.5px;
+      max-width: 52ch;
+      line-height: 1.5;
     }
 
-    .card {
+    .version-tag {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted-2);
+      border: 1px solid var(--border);
+      padding: 4px 9px;
+      border-radius: 5px;
+      white-space: nowrap;
+    }
+
+    .panel {
       background: var(--panel);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 20px;
+      border-radius: 8px;
+    }
+
+    .query-panel {
+      padding: 18px;
+    }
+
+    .field-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted-2);
+      margin-bottom: 8px;
     }
 
     .row {
       display: flex;
-      gap: 10px;
+      gap: 8px;
     }
 
     input[type="text"] {
       flex: 1;
-      background: #0c1220;
+      background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 12px 14px;
+      border-radius: 6px;
+      padding: 10px 12px;
       color: var(--text);
-      font-size: 14px;
+      font-size: 13.5px;
+      font-family: var(--mono);
+    }
+
+    input[type="text"]::placeholder {
+      color: var(--muted-2);
     }
 
     input[type="text"]:focus {
       outline: none;
       border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(76, 141, 255, 0.15);
     }
 
     button {
       background: var(--accent);
-      color: white;
+      color: #fff;
       border: none;
-      border-radius: 8px;
-      padding: 0 20px;
-      font-size: 14px;
+      border-radius: 6px;
+      padding: 0 18px;
+      font-size: 13px;
       font-weight: 600;
       cursor: pointer;
     }
 
+    button:hover:not(:disabled) {
+      background: #3d7ef0;
+    }
+
     button:disabled {
-      opacity: 0.6;
+      opacity: 0.5;
       cursor: default;
     }
 
-    .result {
-      margin-top: 22px;
+    .error {
       display: none;
+      margin-top: 10px;
+      font-size: 12.5px;
+      color: var(--high);
+      background: rgba(224, 82, 95, 0.08);
+      border: 1px solid rgba(224, 82, 95, 0.25);
+      border-radius: 6px;
+      padding: 8px 10px;
+    }
+
+    .error.show {
+      display: block;
+    }
+
+    .result {
+      display: none;
+      margin-top: 18px;
+    }
+
+    .result-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border-top: 1px solid var(--border);
+    }
+
+    .result-target {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 60%;
     }
 
     .badge {
-      display: inline-block;
-      padding: 4px 12px;
-      border-radius: 999px;
-      font-size: 12px;
+      font-size: 10.5px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.05em;
+      padding: 4px 10px;
+      border-radius: 4px;
+      white-space: nowrap;
     }
 
     .badge.low {
-      background: rgba(53, 199, 116, 0.15);
+      background: rgba(63, 185, 101, 0.12);
       color: var(--low);
+      border: 1px solid rgba(63, 185, 101, 0.3);
     }
 
     .badge.medium {
-      background: rgba(242, 183, 59, 0.15);
+      background: rgba(214, 165, 60, 0.12);
       color: var(--medium);
+      border: 1px solid rgba(214, 165, 60, 0.3);
     }
 
     .badge.high {
-      background: rgba(255, 90, 95, 0.15);
+      background: rgba(224, 82, 95, 0.12);
       color: var(--high);
+      border: 1px solid rgba(224, 82, 95, 0.3);
     }
 
-    .score-row {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      margin: 14px 0;
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border-top: 1px solid var(--border);
     }
 
-    .score-num {
-      font-size: 32px;
-      font-weight: 700;
+    .metric {
+      padding: 16px 18px;
+      border-right: 1px solid var(--border);
+    }
+
+    .metric:last-child {
+      border-right: none;
+    }
+
+    .metric-label {
+      font-size: 10.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted-2);
+      margin-bottom: 6px;
+    }
+
+    .metric-value {
+      font-family: var(--mono);
+      font-size: 22px;
+      font-weight: 600;
     }
 
     .bar {
-      flex: 1;
-      height: 8px;
-      background: #0c1220;
+      margin-top: 10px;
+      height: 4px;
+      background: var(--bg);
       border-radius: 999px;
       overflow: hidden;
     }
 
     .bar-fill {
       height: 100%;
+      width: 0%;
       border-radius: 999px;
       transition: width 0.4s ease;
     }
 
-    ul.explain {
-      margin: 10px 0 0;
-      padding-left: 18px;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.6;
-    }
-
-    .layers {
-      margin-top: 30px;
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.7;
-    }
-
-    .layers b {
-      color: var(--text);
-    }
-
-    .footer-credit {
-      margin-top: 24px;
-      padding-top: 16px;
+    .explain-section {
       border-top: 1px solid var(--border);
-      text-align: center;
+      padding: 16px 18px 18px;
+    }
+
+    ul.explain {
+      list-style: none;
+      margin: 10px 0 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    ul.explain li {
+      font-size: 12.5px;
       color: var(--muted);
+      line-height: 1.5;
+      padding-left: 15px;
+      position: relative;
+    }
+
+    ul.explain li::before {
+      content: '—';
+      position: absolute;
+      left: 0;
+      color: var(--muted-2);
+    }
+
+    .arch {
+      margin-top: 40px;
+    }
+
+    .arch-label {
       font-size: 11px;
-      letter-spacing: 0.03em;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted-2);
+      margin-bottom: 12px;
     }
 
-    .error {
-      color: var(--high);
-      font-size: 13px;
-      margin-top: 12px;
+    .pipeline {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
     }
 
-    .meta {
-      margin-top: 16px;
-      font-size: 12px;
+    .stage {
+      padding: 14px 15px;
+      border-right: 1px solid var(--border);
+      background: var(--panel);
+    }
+
+    .stage:last-child {
+      border-right: none;
+    }
+
+    .stage-index {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: var(--accent);
+      margin-bottom: 7px;
+    }
+
+    .stage-title {
+      font-size: 12.5px;
+      font-weight: 650;
+      margin-bottom: 5px;
+    }
+
+    .stage-desc {
+      font-size: 11.5px;
       color: var(--muted);
+      line-height: 1.45;
+    }
+
+    @media (max-width: 680px) {
+      .pipeline {
+        grid-template-columns: 1fr;
+      }
+
+      .stage {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .stage:last-child {
+        border-bottom: none;
+      }
+
+      .metrics-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .metric {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .metric:last-child {
+        border-bottom: none;
+      }
+    }
+
+    .footer {
+      margin-top: 36px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-soft);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--muted-2);
+    }
+
+    .footer .credit {
+      font-family: var(--mono);
     }
   </style>
 </head>
 
 <body>
-  <div class="wrap">
-    <h1>Phishing URL Classifier</h1>
-    <p class="sub">Client Layer demo — submits a URL to the cloud classification API.</p>
-
-    <div class="card">
-      <div class="row">
-        <input id="urlInput" type="text" placeholder="Paste a URL, e.g. http://paypal-secure-login.xyz/verify" />
-        <button id="checkBtn">Check</button>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="mark">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L4 5.5V11c0 5.2 3.4 9.6 8 11 4.6-1.4 8-5.8 8-11V5.5L12 2z" stroke="white" stroke-width="1.8"
+            stroke-linejoin="round" />
+        </svg>
       </div>
-      <div class="error" id="errorBox"></div>
+      <span class="topbar-title">Phish-Catcher</span>
+      <span class="topbar-status"><span class="dot"></span>API Online</span>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="heading-row">
+      <div>
+        <h1>URL risk assessment</h1>
+        <p class="sub">Submits a URL to a Random Forest classifier trained on lexical and structural URL features,
+          returning a phishing probability with a supporting explanation.</p>
+      </div>
+      <span class="version-tag">v1.0 · random-forest</span>
+    </div>
+
+    <div class="panel">
+      <div class="query-panel">
+        <div class="field-label">Target URL</div>
+        <div class="row">
+          <input id="urlInput" type="text" placeholder="https://example.com/path" />
+          <button id="checkBtn">Analyze</button>
+        </div>
+        <div class="error" id="errorBox"></div>
+      </div>
 
       <div class="result" id="result">
-        <div class="score-row">
-          <div class="score-num" id="scoreNum">0%</div>
-          <div class="bar">
-            <div class="bar-fill" id="barFill"></div>
-          </div>
+        <div class="result-header">
+          <span class="result-target" id="resultUrl"></span>
           <span class="badge" id="riskBadge">low</span>
         </div>
-        <div class="meta" id="labelText"></div>
-        <ul class="explain" id="explainList"></ul>
+        <div class="metrics-grid">
+          <div class="metric">
+            <div class="metric-label">Phishing probability</div>
+            <div class="metric-value" id="scoreNum">0%</div>
+            <div class="bar">
+              <div class="bar-fill" id="barFill"></div>
+            </div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Predicted label</div>
+            <div class="metric-value" id="labelText" style="font-size:15px;">—</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Risk level</div>
+            <div class="metric-value" id="riskText" style="font-size:15px;">—</div>
+          </div>
+        </div>
+        <div class="explain-section">
+          <div class="field-label">Contributing signals</div>
+          <ul class="explain" id="explainList"></ul>
+        </div>
       </div>
     </div>
 
-    <div class="layers">
-      <b>1. Client layer</b> — this page (or any browser / mobile app / API caller)<br />
-      <b>2. Feature extraction layer</b> — URL converted into numeric lexical/structural features<br />
-      <b>3. Model inference layer</b> — Random Forest cloud classifier scores the features<br />
-      <b>4. Response layer</b> — returns score, risk level, and explanation
+    <div class="arch">
+      <div class="arch-label">Pipeline architecture</div>
+      <div class="pipeline">
+        <div class="stage">
+          <div class="stage-index">01</div>
+          <div class="stage-title">Client layer</div>
+          <div class="stage-desc">Browser, mobile app, or API request containing a URL.</div>
+        </div>
+        <div class="stage">
+          <div class="stage-index">02</div>
+          <div class="stage-title">Feature extraction</div>
+          <div class="stage-desc">URL converted into numeric lexical and structural features.</div>
+        </div>
+        <div class="stage">
+          <div class="stage-index">03</div>
+          <div class="stage-title">Model inference</div>
+          <div class="stage-desc">Cloud-hosted Random Forest classifier scores the feature vector.</div>
+        </div>
+        <div class="stage">
+          <div class="stage-index">04</div>
+          <div class="stage-title">Response layer</div>
+          <div class="stage-desc">Returns score, risk level, and explanation to the client.</div>
+        </div>
+      </div>
     </div>
-    <div class="footer-credit">
-      Built by Anurag &middot; BCA 5th Sem &middot; A1004824115 &middot; AIIT
+
+    <div class="footer">
+      <span>Academic project — URL-based phishing detection</span>
+      <span class="credit">Anurag · BCA 5th Sem · A1004824115 · AIIT</span>
     </div>
   </div>
 
@@ -231,21 +535,31 @@
     const btn = document.getElementById('checkBtn');
     const result = document.getElementById('result');
     const errorBox = document.getElementById('errorBox');
+    const resultUrl = document.getElementById('resultUrl');
     const scoreNum = document.getElementById('scoreNum');
     const barFill = document.getElementById('barFill');
     const riskBadge = document.getElementById('riskBadge');
     const labelText = document.getElementById('labelText');
+    const riskText = document.getElementById('riskText');
     const explainList = document.getElementById('explainList');
 
-    const riskColor = { low: '#35c774', medium: '#f2b73b', high: '#ff5a5f' };
+    const riskColor = { low: '#3fb965', medium: '#d6a53c', high: '#e0525f' };
 
     async function check() {
       const url = input.value.trim();
+      errorBox.classList.remove('show');
       errorBox.textContent = '';
-      if (!url) { errorBox.textContent = 'Enter a URL first.'; return; }
+      if (!url) {
+        errorBox.textContent = 'Enter a URL first.';
+        errorBox.classList.add('show');
+        return;
+      }
 
       btn.disabled = true;
-      btn.textContent = 'Checking...';
+      btn.textContent = 'Analyzing…';
+      result.style.display = 'none';
+      barFill.style.width = '0%';
+
       try {
         const res = await fetch('/api/v1/predict', {
           method: 'POST',
@@ -256,12 +570,14 @@
         if (!res.ok) throw new Error(data.error || 'Request failed');
 
         const pct = Math.round(data.score * 100);
+        resultUrl.textContent = data.url;
+        resultUrl.title = data.url;
         scoreNum.textContent = pct + '%';
-        barFill.style.width = pct + '%';
-        barFill.style.background = riskColor[data.risk_level];
         riskBadge.textContent = data.risk_level;
         riskBadge.className = 'badge ' + data.risk_level;
-        labelText.textContent = 'Predicted: ' + data.label.toUpperCase();
+        labelText.textContent = data.label.toUpperCase();
+        riskText.textContent = data.risk_level.toUpperCase();
+        riskText.style.color = riskColor[data.risk_level];
 
         explainList.innerHTML = '';
         (data.explanation || []).forEach(line => {
@@ -276,12 +592,13 @@
         }
 
         result.style.display = 'block';
+        requestAnimationFrame(() => { barFill.style.width = pct + '%'; barFill.style.background = riskColor[data.risk_level]; });
       } catch (err) {
         errorBox.textContent = err.message;
-        result.style.display = 'none';
+        errorBox.classList.add('show');
       } finally {
         btn.disabled = false;
-        btn.textContent = 'Check';
+        btn.textContent = 'Analyze';
       }
     }
 
