@@ -1,0 +1,73 @@
+{
+  "accuracy": 1.0,
+  "precision": 1.0,
+  "recall": 1.0,
+  "f1_score": 1.0,
+  "roc_auc": 1.0,
+  "confusion_matrix": [
+    [
+      300,
+      0
+    ],
+    [
+      0,
+      300
+    ]
+  ],
+  "classification_report": {
+    "0": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 300.0
+    },
+    "1": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 300.0
+    },
+    "accuracy": 1.0,
+    "macro avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 600.0
+    },
+    "weighted avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 600.0
+    }
+  },
+  "n_train": 2400,
+  "n_test": 600,
+  "feature_importances": {
+    "has_https": 0.25957589936421877,
+    "tld_suspicious": 0.14926608040028508,
+    "digit_ratio": 0.08147372417603106,
+    "num_suspicious_words": 0.07517896044320198,
+    "has_suspicious_words": 0.07367571173129371,
+    "num_hyphens": 0.06584003285666712,
+    "hostname_length": 0.06543755051474677,
+    "num_digits": 0.04388079797319242,
+    "is_shortened": 0.031969115336515225,
+    "num_subdomains": 0.028095833622421188,
+    "brand_name_in_subdomain": 0.02109483029008108,
+    "num_dots": 0.02024769371913045,
+    "has_ip_address": 0.015065893447132267,
+    "num_slashes": 0.013200891116596572,
+    "path_length": 0.012383895071149422,
+    "num_equal_signs": 0.011806416730221835,
+    "num_question_marks": 0.010196913746617527,
+    "url_length": 0.008813080940646778,
+    "shannon_entropy": 0.006384422717518358,
+    "longest_word_length": 0.005388679738589007,
+    "num_at_symbols": 0.0005031471134653099,
+    "num_ampersands": 0.0004631881046486235,
+    "num_underscores": 5.724084562948697e-05,
+    "num_percent": 0.0,
+    "has_port": 0.0
+  }
+}

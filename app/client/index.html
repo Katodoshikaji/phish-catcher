@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Phishing URL Classifier</title>
+<style>
+  :root {
+    --bg: #0f1420;
+    --panel: #161d2e;
+    --border: #263049;
+    --text: #e7ecf7;
+    --muted: #93a0bb;
+    --accent: #5b8cff;
+    --low: #35c774;
+    --medium: #f2b73b;
+    --high: #ff5a5f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 40px 16px;
+  }
+  .wrap { width: 100%; max-width: 720px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  p.sub { color: var(--muted); margin: 0 0 28px; font-size: 14px; }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .row { display: flex; gap: 10px; }
+  input[type="text"] {
+    flex: 1;
+    background: #0c1220;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-size: 14px;
+  }
+  input[type="text"]:focus { outline: none; border-color: var(--accent); }
+  button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.6; cursor: default; }
+  .result { margin-top: 22px; display: none; }
+  .badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .badge.low { background: rgba(53,199,116,0.15); color: var(--low); }
+  .badge.medium { background: rgba(242,183,59,0.15); color: var(--medium); }
+  .badge.high { background: rgba(255,90,95,0.15); color: var(--high); }
+  .score-row { display: flex; align-items: center; gap: 14px; margin: 14px 0; }
+  .score-num { font-size: 32px; font-weight: 700; }
+  .bar { flex: 1; height: 8px; background: #0c1220; border-radius: 999px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 999px; transition: width 0.4s ease; }
+  ul.explain { margin: 10px 0 0; padding-left: 18px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+  .layers { margin-top: 30px; color: var(--muted); font-size: 12px; line-height: 1.7; }
+  .layers b { color: var(--text); }
+  .error { color: var(--high); font-size: 13px; margin-top: 12px; }
+  .meta { margin-top: 16px; font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Phishing URL Classifier</h1>
+  <p class="sub">Client Layer demo — submits a URL to the cloud classification API.</p>
+
+  <div class="card">
+    <div class="row">
+      <input id="urlInput" type="text" placeholder="Paste a URL, e.g. http://paypal-secure-login.xyz/verify" />
+      <button id="checkBtn">Check</button>
+    </div>
+    <div class="error" id="errorBox"></div>
+
+    <div class="result" id="result">
+      <div class="score-row">
+        <div class="score-num" id="scoreNum">0%</div>
+        <div class="bar"><div class="bar-fill" id="barFill"></div></div>
+        <span class="badge" id="riskBadge">low</span>
+      </div>
+      <div class="meta" id="labelText"></div>
+      <ul class="explain" id="explainList"></ul>
+    </div>
+  </div>
+
+  <div class="layers">
+    <b>1. Client layer</b> — this page (or any browser / mobile app / API caller)<br/>
+    <b>2. Feature extraction layer</b> — URL converted into numeric lexical/structural features<br/>
+    <b>3. Model inference layer</b> — Random Forest cloud classifier scores the features<br/>
+    <b>4. Response layer</b> — returns score, risk level, and explanation
+  </div>
+</div>
+
+<script>
+const input = document.getElementById('urlInput');
+const btn = document.getElementById('checkBtn');
+const result = document.getElementById('result');
+const errorBox = document.getElementById('errorBox');
+const scoreNum = document.getElementById('scoreNum');
+const barFill = document.getElementById('barFill');
+const riskBadge = document.getElementById('riskBadge');
+const labelText = document.getElementById('labelText');
+const explainList = document.getElementById('explainList');
+
+const riskColor = { low: '#35c774', medium: '#f2b73b', high: '#ff5a5f' };
+
+async function check() {
+  const url = input.value.trim();
+  errorBox.textContent = '';
+  if (!url) { errorBox.textContent = 'Enter a URL first.'; return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Checking...';
+  try {
+    const res = await fetch('/api/v1/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Request failed');
+
+    const pct = Math.round(data.score * 100);
+    scoreNum.textContent = pct + '%';
+    barFill.style.width = pct + '%';
+    barFill.style.background = riskColor[data.risk_level];
+    riskBadge.textContent = data.risk_level;
+    riskBadge.className = 'badge ' + data.risk_level;
+    labelText.textContent = 'Predicted: ' + data.label.toUpperCase();
+
+    explainList.innerHTML = '';
+    (data.explanation || []).forEach(line => {
+      const li = document.createElement('li');
+      li.textContent = line;
+      explainList.appendChild(li);
+    });
+    if (!data.explanation || data.explanation.length === 0) {
+      const li = document.createElement('li');
+      li.textContent = 'No strongly suspicious lexical patterns detected.';
+      explainList.appendChild(li);
+    }
+
+    result.style.display = 'block';
+  } catch (err) {
+    errorBox.textContent = err.message;
+    result.style.display = 'none';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Check';
+  }
+}
+
+btn.addEventListener('click', check);
+input.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
+</script>
+</body>
+</html>
